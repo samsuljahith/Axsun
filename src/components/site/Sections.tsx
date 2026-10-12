@@ -27,7 +27,7 @@ function H2({ children, sub }: { children: ReactNode; sub?: string }) {
 }
 function useInView<T extends Element>() {
   const ref = useRef<T>(null); const [v, setV] = useState(false);
-  useEffect(() => { const o = new IntersectionObserver(([e]) => e.isIntersecting && setV(true), { threshold: 0.3 }); ref.current && o.observe(ref.current); return () => o.disconnect(); }, []);
+  useEffect(() => { const o = new IntersectionObserver(([e]) => e?.isIntersecting && setV(true), { threshold: 0.3 }); ref.current && o.observe(ref.current); return () => o.disconnect(); }, []);
   return [ref, v] as const;
 }
 
@@ -107,13 +107,13 @@ export function Problem() {
 
 export function calcResult(units: number) {
   const needKw = units / CALC.unitsPerKwPerMonth;
-  const kw = CALC.sizes.find((s) => s >= needKw) ?? CALC.sizes[CALC.sizes.length - 1];
+  const kw = CALC.sizes.find((s) => s >= needKw) ?? 10;
   const gen = kw * CALC.unitsPerKwPerMonth;
   const subsidy = subsidyFor(kw);
   const net = kw * CALC.costPerKw - subsidy;
   const monthlySave = Math.min(gen, units) * CALC.tariffPerUnit;
   const payback = monthlySave > 0 ? net / (monthlySave * 12) : 0;
-  return { kw, plus: needKw > CALC.sizes[CALC.sizes.length - 1], gen, subsidy, payback };
+  return { kw, plus: needKw > 10, gen, subsidy, payback };
 }
 
 export function SavingsCalculator() {
