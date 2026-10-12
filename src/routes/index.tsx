@@ -1,24 +1,69 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { LangProvider } from "@/config/i18n";
+import { SITE } from "@/config/site";
+import {
+  Navbar, Hero, Problem, SavingsCalculator, Sizing, Quality, HowItWorks, Subsidy,
+  Process, Services, Installations, Faq, LeadForm, Footer, FloatingBars,
+} from "@/components/site/Sections";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+const title = "Rooftop Solar Installation in Erode | Axsun Renewtech";
+const description =
+  "Residential, commercial and utility solar EPC in Erode & Tamil Nadu. Free site assessment, subsidy handled, quality panels. Chat on WhatsApp.";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "Axsun Renewtech",
+  slogan: "From Rays to Revolution.",
+  telephone: SITE.PHONE_TEL,
+  email: SITE.EMAIL,
+  founder: "Akmal Ahamed N",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "17, Pannadi Thurai Street, B.P. Agraharam",
+    addressLocality: "Erode",
+    postalCode: "638005",
+    addressRegion: "Tamil Nadu",
+    addressCountry: "IN",
+  },
+  areaServed: "Tamil Nadu",
+};
+
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    scripts: [{ type: "application/ld+json", children: JSON.stringify(jsonLd) }],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <LangProvider>
+      <Navbar />
+      <main>
+        <Hero />
+        <Problem />
+        <SavingsCalculator />
+        <Sizing />
+        <Quality />
+        <HowItWorks />
+        <Subsidy />
+        <Process />
+        <Services />
+        <Installations />
+        <Faq />
+        <LeadForm />
+      </main>
+      <Footer />
+      <FloatingBars />
+    </LangProvider>
   );
 }
