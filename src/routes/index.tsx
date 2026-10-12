@@ -2,8 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LangProvider } from "@/config/i18n";
 import { SITE } from "@/config/site";
 import {
-  Navbar, Hero, Problem, SavingsCalculator, Sizing, Quality, HowItWorks, Subsidy,
-  Process, Services, Installations, Faq, LeadForm, Footer, FloatingBars,
+  Navbar,
+  Hero,
+  Problem,
+  SavingsCalculator,
+  Sizing,
+  Quality,
+  HowItWorks,
+  Subsidy,
+  Process,
+  Services,
+  Installations,
+  Faq,
+  LeadForm,
+  Footer,
+  FloatingBars,
 } from "@/components/site/Sections";
 
 const title = "Rooftop Solar Installation in Erode | Axsun Renewtech";

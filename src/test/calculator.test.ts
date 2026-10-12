@@ -13,7 +13,9 @@ import {
 describe("monthlyUnitsFrom", () => {
   it("treats the entered bill as covering the TN bi-monthly billing period", () => {
     // ₹6,000 over 2 months at ₹7/unit ≈ 428.6 units/month
-    expect(monthlyUnitsFrom("bill", 6000)).toBeCloseTo(6000 / CALC.billingMonths / CALC.tariffPerUnit);
+    expect(monthlyUnitsFrom("bill", 6000)).toBeCloseTo(
+      6000 / CALC.billingMonths / CALC.tariffPerUnit,
+    );
     expect(monthlyUnitsFrom("units", 800)).toBe(400);
   });
 

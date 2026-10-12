@@ -71,4 +71,5 @@ export const waLink = (text: string) =>
 export const inr = (n: number) => "₹" + Math.round(n).toLocaleString("en-IN");
 
 /** Indian mobile number: optional +91/0 prefix, then 10 digits starting 6–9. */
-export const isIndianMobile = (s: string) => /^(?:\+?91|0)?[6-9]\d{9}$/.test(s.replace(/[\s-]/g, ""));
+export const isIndianMobile = (s: string) =>
+  /^(?:\+?91|0)?[6-9]\d{9}$/.test(s.replace(/[\s-]/g, ""));
