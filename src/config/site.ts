@@ -28,7 +28,7 @@ export const SUBSIDY = [
 
 export function subsidyFor(kw: number) {
   const row = kw <= 1 ? SUBSIDY[0] : kw <= 2 ? SUBSIDY[1] : kw <= 3 ? SUBSIDY[2] : SUBSIDY[3];
-  return row.central + row.state;
+  return row!.central + row!.state;
 }
 
 export const waLink = (text: string) =>

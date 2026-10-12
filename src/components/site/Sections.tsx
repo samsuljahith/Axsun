@@ -248,7 +248,7 @@ export function Services() {
     <Section tint>
       <H2>{t.services.title}</H2>
       <div className="grid gap-4 md:grid-cols-3">
-        {t.services.items.map(([a, b], i) => { const I = icons[i]; return <div key={a} className="rounded-3xl bg-background p-6 shadow-soft"><div className="grid h-12 w-12 place-items-center rounded-xl bg-sun-gradient text-primary-foreground"><I /></div><h3 className="mt-4 text-xl font-bold">{a}</h3><p className="mt-2 text-sm text-muted-foreground">{b}</p></div>; })}
+        {t.services.items.map(([a, b], i) => { const I = icons[i]!; return <div key={a} className="rounded-3xl bg-background p-6 shadow-soft"><div className="grid h-12 w-12 place-items-center rounded-xl bg-sun-gradient text-primary-foreground"><I /></div><h3 className="mt-4 text-xl font-bold">{a}</h3><p className="mt-2 text-sm text-muted-foreground">{b}</p></div>; })}
       </div>
     </Section>
   );
