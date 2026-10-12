@@ -2,9 +2,16 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MessageCircle, Phone, Mail, MapPin, Instagram, Sun, Moon, Check, ArrowRight, Home, Building2, Factory, Calculator } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useT } from "@/config/i18n";
-import { SITE, CALC, SUBSIDY, subsidyFor, waLink, inr } from "@/config/site";
-import logo from "@/assets/axsun-logo.png.asset.json";
-import mark from "@/assets/axsun-mark.png.asset.json";
+import {
+  SITE,
+  SUBSIDY,
+  HAS_STATE_SUBSIDY,
+  calcResult,
+  monthlyUnitsFrom,
+  isIndianMobile,
+  waLink,
+  inr,
+} from "@/config/site";
 import hero from "@/assets/hero-solar.jpg";
 
 const wa = () => waLink(SITE.DEFAULT_WA_MESSAGE);
@@ -27,7 +34,7 @@ function H2({ children, sub }: { children: ReactNode; sub?: string }) {
 }
 function useInView<T extends Element>() {
   const ref = useRef<T>(null); const [v, setV] = useState(false);
-  useEffect(() => { const o = new IntersectionObserver(([e]) => e?.isIntersecting && setV(true), { threshold: 0.3 }); ref.current && o.observe(ref.current); return () => o.disconnect(); }, []);
+  useEffect(() => { const o = new IntersectionObserver(([e]) => e?.isIntersecting && setV(true), { threshold: 0.3 }); if (ref.current) o.observe(ref.current); return () => o.disconnect(); }, []);
   return [ref, v] as const;
 }
 
@@ -37,7 +44,7 @@ export function Navbar() {
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
         <a href="#top" className="flex items-center gap-2">
-          <img src={mark.url} alt="" className="h-9 w-9 object-contain" />
+          <img src={SITE.MARK} alt="" width={36} height={36} className="h-9 w-9 object-contain" />
           <span className="leading-none"><span className="block font-display text-lg font-extrabold tracking-wider text-navy">AXSUN</span><span className="block font-display text-[10px] font-bold tracking-[0.35em] text-brand-bright">RENEWTECH</span></span>
         </a>
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
@@ -105,42 +112,31 @@ export function Problem() {
   );
 }
 
-export function calcResult(units: number) {
-  const needKw = units / CALC.unitsPerKwPerMonth;
-  const kw = CALC.sizes.find((s) => s >= needKw) ?? 10;
-  const gen = kw * CALC.unitsPerKwPerMonth;
-  const subsidy = subsidyFor(kw);
-  const net = kw * CALC.costPerKw - subsidy;
-  const monthlySave = Math.min(gen, units) * CALC.tariffPerUnit;
-  const payback = monthlySave > 0 ? net / (monthlySave * 12) : 0;
-  return { kw, plus: needKw > 10, gen, subsidy, payback };
-}
-
 export function SavingsCalculator() {
   const { t } = useT();
   const [mode, setMode] = useState<"bill" | "units">("bill");
-  const [val, setVal] = useState(3000);
-  const units = mode === "bill" ? val / CALC.tariffPerUnit : val;
-  const r = calcResult(units);
+  const [val, setVal] = useState(6000);
+  const r = calcResult(monthlyUnitsFrom(mode, val));
   const size = `${r.kw}${r.plus ? "+" : ""} kW`;
-  const msg = `Hi Axsun, I used your solar calculator.\n${mode === "bill" ? `Monthly EB bill: ${inr(val)}` : `Monthly units: ${val}`}\nSuggested size: ${size}\nEst. generation: ${r.gen} units/month\nEst. subsidy: ${inr(r.subsidy)}\nRough payback: ${r.payback.toFixed(1)} years\nPlease book my free site assessment.`;
+  const payback = r.payback === null ? "—" : `~${r.payback.toFixed(1)} ${t.calc.years}`;
+  const msg = `Hi Axsun, I used your solar calculator.\n${mode === "bill" ? `EB bill (2 months): ${inr(val)}` : `Units (2 months): ${val}`}\nSuggested size: ${size}\nEst. generation: ${r.gen} units/month\nEst. subsidy: ${inr(r.subsidy)}${r.payback === null ? "" : `\nRough payback: ${r.payback.toFixed(1)} years`}\nPlease book my free site assessment.`;
   return (
     <Section id="calc" tint>
       <H2 sub={t.calc.sub}>{t.calc.title}</H2>
       <div className="grid gap-6 md:grid-cols-2">
         <div className="rounded-3xl bg-background p-6 shadow-soft md:p-8">
           <div className="mb-6 flex rounded-full bg-tint p-1 text-sm font-semibold">
-            {(["bill", "units"] as const).map((m) => <button key={m} onClick={() => { setMode(m); setVal(m === "bill" ? 3000 : 400); }} className={`flex-1 rounded-full py-2 ${mode === m ? "bg-brand text-primary-foreground" : ""}`}>{t.calc[m]}</button>)}
+            {(["bill", "units"] as const).map((m) => <button key={m} onClick={() => { setMode(m); setVal(m === "bill" ? 6000 : 800); }} className={`flex-1 rounded-full py-2 ${mode === m ? "bg-brand text-primary-foreground" : ""}`}>{t.calc[m]}</button>)}
           </div>
           <label className="block text-sm font-medium text-muted-foreground">{t.calc[mode]}</label>
-          <input type="number" inputMode="numeric" min={0} value={val} onChange={(e) => setVal(Math.max(0, Number(e.target.value)))} className="mt-2 w-full rounded-xl border-2 px-4 py-3 font-display text-2xl font-bold focus:border-brand focus:outline-none" />
-          <input type="range" min={mode === "bill" ? 500 : 50} max={mode === "bill" ? 20000 : 2500} step={mode === "bill" ? 100 : 10} value={val} onChange={(e) => setVal(Number(e.target.value))} className="mt-6 w-full accent-brand" />
+          <input type="number" inputMode="numeric" min={0} value={val} aria-label={t.calc[mode]} onChange={(e) => setVal(Math.max(0, Number(e.target.value)))} className="mt-2 w-full rounded-xl border-2 px-4 py-3 font-display text-2xl font-bold focus:border-brand focus:outline-none" />
+          <input type="range" min={mode === "bill" ? 1000 : 100} max={mode === "bill" ? 40000 : 5000} step={mode === "bill" ? 200 : 20} value={val} onChange={(e) => setVal(Number(e.target.value))} className="mt-6 w-full accent-brand" />
         </div>
         <div className="rounded-3xl bg-navy p-6 text-primary-foreground shadow-soft md:p-8">
           <p className="text-sm opacity-70">{t.calc.size}</p>
           <p className="font-display text-5xl font-extrabold text-sun">{size}</p>
           <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-            {[[t.calc.gen, `${r.gen} ${t.calc.unitsLbl}`], [t.calc.subsidy, inr(r.subsidy)], [t.calc.payback, `~${r.payback.toFixed(1)} ${t.calc.years}`]].map(([a, b]) => (
+            {[[t.calc.gen, `${r.gen} ${t.calc.unitsLbl}`], [t.calc.subsidy, inr(r.subsidy)], [t.calc.payback, payback]].map(([a, b]) => (
               <div key={a} className="rounded-xl bg-primary-foreground/10 p-3"><p className="text-[11px] opacity-70">{a}</p><p className="mt-1 font-display text-sm font-bold md:text-base">{b}</p></div>
             ))}
           </div>
@@ -218,12 +214,12 @@ export function Subsidy() {
       <H2 sub={t.subsidy.sub}>{t.subsidy.title}</H2>
       <div className="overflow-hidden rounded-2xl bg-background shadow-soft">
         <table className="w-full text-left text-sm">
-          <thead className="bg-brand text-primary-foreground"><tr>{t.subsidy.cols.map((c) => <th key={c} className="px-4 py-3 font-display">{c}</th>)}</tr></thead>
-          <tbody>{SUBSIDY.map((r) => <tr key={r.label} className="border-t"><td className="px-4 py-3 font-semibold">{r.label}</td><td className="px-4 py-3">{inr(r.central)}</td><td className="px-4 py-3">{inr(r.state)}</td><td className="px-4 py-3 font-bold text-brand">{inr(r.central + r.state)}</td></tr>)}</tbody>
+          <thead className="bg-brand text-primary-foreground"><tr>{t.subsidy.cols.filter((_, i) => HAS_STATE_SUBSIDY || i !== 2).map((c) => <th key={c} className="px-4 py-3 font-display">{c}</th>)}</tr></thead>
+          <tbody>{SUBSIDY.map((r) => <tr key={r.label} className="border-t"><td className="px-4 py-3 font-semibold">{r.label}</td><td className="px-4 py-3">{inr(r.central)}</td>{HAS_STATE_SUBSIDY && <td className="px-4 py-3">{inr(r.state)}</td>}<td className="px-4 py-3 font-bold text-brand">{inr(r.central + r.state)}</td></tr>)}</tbody>
         </table>
       </div>
-      <ol className="mt-8 grid gap-3 md:grid-cols-4">
-        {t.subsidy.timeline.map((s, i) => <li key={s} className="flex items-center gap-3 rounded-xl bg-background p-4 shadow-soft"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sun font-display font-bold text-navy">{i + 1}</span><span className="text-sm font-medium">{s}</span></li>)}
+      <ol className={`mt-8 grid gap-3 ${HAS_STATE_SUBSIDY ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
+        {t.subsidy.timeline.filter((_, i) => HAS_STATE_SUBSIDY || i !== 3).map((s, i) => <li key={s} className="flex items-center gap-3 rounded-xl bg-background p-4 shadow-soft"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sun font-display font-bold text-navy">{i + 1}</span><span className="text-sm font-medium">{s}</span></li>)}
       </ol>
       <p className="mt-4 text-center text-xs text-muted-foreground">{t.subsidy.disclaimer}</p>
     </Section>
@@ -277,21 +273,31 @@ export function LeadForm() {
   const { t } = useT();
   const [f, setF] = useState({ name: "", phone: "", area: "", bill: "", roof: "" });
   const [file, setFile] = useState(false);
+  const [phoneErr, setPhoneErr] = useState(false);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const msg = `Hi Axsun, I'd like a FREE solar assessment.\n\nName: ${f.name}\nPhone: ${f.phone}\nArea/Town: ${f.area}\nMonthly bill: ₹${f.bill}\nRoof type: ${f.roof}${file ? "\nEB bill: I'll attach it here." : ""}`;
-    window.open(waLink(msg), "_blank");
+    if (!isIndianMobile(f.phone)) {
+      setPhoneErr(true);
+      return;
+    }
+    const msg = `Hi Axsun, I'd like a FREE solar assessment.\n\nName: ${f.name}\nPhone: ${f.phone}\nArea/Town: ${f.area}\nEB bill (2 months): ₹${f.bill}\nRoof type: ${f.roof}${file ? "\nEB bill: I'll attach it here." : ""}`;
+    // Some in-app browsers (Instagram, Facebook) block popups; fall back to same-tab navigation.
+    const w = window.open(waLink(msg), "_blank", "noopener");
+    if (!w) window.location.href = waLink(msg);
   };
   const input = "w-full rounded-xl border-2 px-4 py-3 focus:border-brand focus:outline-none";
   return (
     <Section id="contact" tint>
       <H2 sub={t.form.sub}>{t.form.title}</H2>
       <form onSubmit={submit} className="mx-auto grid max-w-2xl gap-4 rounded-3xl bg-background p-6 shadow-soft md:grid-cols-2 md:p-8">
-        <input required placeholder={t.form.name} value={f.name} onChange={set("name")} className={input} aria-label={t.form.name} />
-        <input required type="tel" placeholder={t.form.phone} value={f.phone} onChange={set("phone")} className={input} aria-label={t.form.phone} />
+        <input required autoComplete="name" placeholder={t.form.name} value={f.name} onChange={set("name")} className={input} aria-label={t.form.name} />
+        <div>
+          <input required type="tel" inputMode="tel" autoComplete="tel" placeholder={t.form.phone} value={f.phone} onChange={(e) => { set("phone")(e); setPhoneErr(false); }} className={`${input} ${phoneErr ? "border-destructive" : ""}`} aria-label={t.form.phone} aria-invalid={phoneErr} aria-describedby="phone-err" />
+          {phoneErr && <p id="phone-err" className="mt-1 text-xs text-destructive">{t.form.phoneErr}</p>}
+        </div>
         <input required placeholder={t.form.area} value={f.area} onChange={set("area")} className={input} aria-label={t.form.area} />
-        <input required type="number" placeholder={t.form.bill} value={f.bill} onChange={set("bill")} className={input} aria-label={t.form.bill} />
+        <input required type="number" inputMode="numeric" min={0} placeholder={t.form.bill} value={f.bill} onChange={set("bill")} className={input} aria-label={t.form.bill} />
         <select required value={f.roof} onChange={set("roof")} className={`${input} md:col-span-2`} aria-label={t.form.roof}>
           <option value="">{t.form.roof}</option>{t.form.roofs.map((r) => <option key={r}>{r}</option>)}
         </select>
@@ -315,12 +321,12 @@ export function Footer() {
       </section>
       <footer className="bg-background px-4 pb-28 pt-12 md:pb-12">
         <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
-          <div><img src={logo.url} alt="Axsun Renewtech" className="h-32 w-32 object-contain" loading="lazy" /><p className="mt-2 text-sm text-muted-foreground">Akmal Ahamed N — Founder & Proprietor</p></div>
+          <div><img src={SITE.LOGO} alt="Axsun Renewtech" width={128} height={128} className="h-32 w-32 object-contain" loading="lazy" /><p className="mt-2 text-sm text-muted-foreground">Akmal Ahamed N — Founder & Proprietor</p></div>
           <ul className="space-y-3 text-sm">
             <li><a href={`tel:${SITE.PHONE_TEL}`} className="flex gap-2 hover:text-brand"><Phone className="h-4 w-4 text-brand" />{SITE.PHONE_DISPLAY}</a></li>
             <li><a href={`mailto:${SITE.EMAIL}`} className="flex gap-2 break-all hover:text-brand"><Mail className="h-4 w-4 shrink-0 text-brand" />{SITE.EMAIL}</a></li>
             <li className="flex gap-2"><MapPin className="h-4 w-4 shrink-0 text-brand" />{SITE.ADDRESS}</li>
-            <li className="flex gap-4 pt-2"><a href={SITE.INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram className="h-6 w-6 text-brand" /></a><a href={wa()} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><MessageCircle className="h-6 w-6 text-brand" /></a></li>
+            <li className="flex gap-4 pt-2">{SITE.INSTAGRAM_URL && <a href={SITE.INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram className="h-6 w-6 text-brand" /></a>}<a href={wa()} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><MessageCircle className="h-6 w-6 text-brand" /></a></li>
           </ul>
           <iframe title="Axsun Renewtech location" src={SITE.MAP_EMBED} loading="lazy" className="h-48 w-full rounded-2xl border-0" />
         </div>

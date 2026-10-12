@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export type Lang = "en" | "ta";
 
@@ -22,9 +22,9 @@ const en = {
   },
   calc: {
     title: "Solar Savings Calculator",
-    sub: "See what size system fits your home in seconds.",
-    bill: "Monthly EB bill (₹)",
-    units: "Monthly units",
+    sub: "Enter the amount from your bi-monthly EB bill to see what size fits your home.",
+    bill: "EB bill amount – 2 months (₹)",
+    units: "Units used – 2 months",
     size: "Suggested system size",
     gen: "Est. monthly generation",
     subsidy: "Est. subsidy",
@@ -96,10 +96,11 @@ const en = {
   form: {
     title: "Book your free assessment",
     sub: "Fill this in and it opens WhatsApp with your details ready to send.",
-    name: "Name", phone: "Phone", area: "Area / Town", bill: "Monthly bill (₹)", roof: "Roof type",
+    name: "Name", phone: "Phone", area: "Area / Town", bill: "EB bill – 2 months (₹)", roof: "Roof type",
     roofs: ["RCC", "Sheet", "Tiled"],
     upload: "Upload EB bill (optional)",
     uploadHint: "Please attach the bill photo in WhatsApp after it opens.",
+    phoneErr: "Please enter a valid 10-digit mobile number.",
     submit: "Send on WhatsApp",
   },
   final: { title: "Let's build a brighter tomorrow together" },
@@ -128,9 +129,9 @@ const ta: Dict = {
   },
   calc: {
     title: "சோலார் சேமிப்பு கணக்கீடு",
-    sub: "உங்கள் வீட்டுக்கு ஏற்ற அளவை நொடிகளில் அறியுங்கள்.",
-    bill: "மாத மின் கட்டணம் (₹)",
-    units: "மாத யூனிட்கள்",
+    sub: "உங்கள் இரு மாத மின் கட்டணத் தொகையை உள்ளிட்டு, வீட்டுக்கு ஏற்ற அளவை அறியுங்கள்.",
+    bill: "மின் கட்டணம் – 2 மாதம் (₹)",
+    units: "பயன்படுத்திய யூனிட் – 2 மாதம்",
     size: "பரிந்துரைக்கப்படும் அளவு",
     gen: "மாத உற்பத்தி (மதிப்பீடு)",
     subsidy: "மானியம் (மதிப்பீடு)",
@@ -202,10 +203,11 @@ const ta: Dict = {
   form: {
     title: "இலவச மதிப்பீட்டை பதிவு செய்யுங்கள்",
     sub: "இதை நிரப்பினால் உங்கள் விவரங்களுடன் WhatsApp திறக்கும்.",
-    name: "பெயர்", phone: "தொலைபேசி", area: "பகுதி / ஊர்", bill: "மாத கட்டணம் (₹)", roof: "கூரை வகை",
+    name: "பெயர்", phone: "தொலைபேசி", area: "பகுதி / ஊர்", bill: "மின் கட்டணம் – 2 மாதம் (₹)", roof: "கூரை வகை",
     roofs: ["RCC", "ஷீட்", "ஓடு"],
     upload: "மின் கட்டண ரசீது (விருப்பம்)",
     uploadHint: "WhatsApp திறந்ததும் ரசீது புகைப்படத்தை இணைக்கவும்.",
+    phoneErr: "சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்.",
     submit: "WhatsApp-ல் அனுப்பு",
   },
   final: { title: "பிரகாசமான நாளையை ஒன்றாக உருவாக்குவோம்" },
@@ -215,8 +217,27 @@ const ta: Dict = {
 const dicts = { en, ta };
 const Ctx = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: Dict }>({ lang: "en", setLang: () => {}, t: en });
 
+const LANG_KEY = "axsun-lang";
+
 export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>("en");
+  // Restore the visitor's last choice after hydration (server always renders English).
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "ta") setLang(saved);
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    try {
+      localStorage.setItem(LANG_KEY, lang);
+    } catch {
+      /* storage unavailable */
+    }
+  }, [lang]);
   return <Ctx.Provider value={{ lang, setLang, t: dicts[lang] }}>{children}</Ctx.Provider>;
 }
 export const useT = () => useContext(Ctx);

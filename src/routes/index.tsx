@@ -27,6 +27,10 @@ const jsonLd = {
     addressCountry: "IN",
   },
   areaServed: "Tamil Nadu",
+  image: `${SITE.SITE_URL}${SITE.OG_IMAGE}`,
+  logo: `${SITE.SITE_URL}${SITE.LOGO}`,
+  ...(SITE.SITE_URL ? { url: SITE.SITE_URL } : {}),
+  ...(SITE.INSTAGRAM_URL ? { sameAs: [SITE.INSTAGRAM_URL] } : {}),
 };
 
 export const Route = createFileRoute("/")({
@@ -37,8 +41,14 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: `${SITE.SITE_URL}${SITE.OG_IMAGE}` },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:locale", content: "en_IN" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: `${SITE.SITE_URL}${SITE.OG_IMAGE}` },
     ],
+    links: SITE.SITE_URL ? [{ rel: "canonical", href: `${SITE.SITE_URL}/` }] : [],
     scripts: [{ type: "application/ld+json", children: JSON.stringify(jsonLd) }],
   }),
   component: Index,
