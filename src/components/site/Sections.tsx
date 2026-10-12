@@ -525,8 +525,11 @@ export function LeadForm() {
     }
     const msg = `Hi Axsun, I'd like a FREE solar assessment.\n\nName: ${f.name}\nPhone: ${f.phone}\nArea/Town: ${f.area}\nEB bill (2 months): ₹${f.bill}\nRoof type: ${f.roof}${file ? "\nEB bill: I'll attach it here." : ""}`;
     // Some in-app browsers (Instagram, Facebook) block popups; fall back to same-tab navigation.
-    const w = window.open(waLink(msg), "_blank", "noopener");
-    if (!w) window.location.href = waLink(msg);
+    // (No "noopener" feature here: with it window.open always returns null, which would
+    // trigger the fallback as well. Clear the opener manually instead.)
+    const w = window.open(waLink(msg), "_blank");
+    if (w) w.opener = null;
+    else window.location.href = waLink(msg);
   };
   const input = "w-full rounded-xl border-2 px-4 py-3 focus:border-brand focus:outline-none";
   return (
